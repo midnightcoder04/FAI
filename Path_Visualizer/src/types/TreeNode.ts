@@ -13,6 +13,7 @@ export interface TreeNode {
   isBlocked: boolean;
   level: number;
   visitOrder?: number;
+  weight?: number;  // Edge weight for weighted algorithms
 }
 
 // Edge between nodes for visualization

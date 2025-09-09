@@ -84,6 +84,32 @@
   }
 }
 
+@keyframes nodeEntrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(180deg);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2) rotate(90deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes edgeEntrance {
+  0% {
+    opacity: 0;
+    width: 0%;
+  }
+  100% {
+    opacity: 1;
+    width: 100%;
+  }
+}
+
 /* Animation Classes */
 .animate-tree-visited {
   animation: treeNodeVisited 0.6s ease-out forwards;
@@ -103,6 +129,14 @@
 
 .animate-edge-draw {
   animation: edgeDraw 0.5s ease-out forwards;
+}
+
+.animate-node-entrance {
+  animation: nodeEntrance 0.5s ease-out forwards;
+}
+
+.animate-edge-entrance {
+  animation: edgeEntrance 0.3s ease-out forwards;
 }
 
 /* Legacy grid animations for backward compatibility */

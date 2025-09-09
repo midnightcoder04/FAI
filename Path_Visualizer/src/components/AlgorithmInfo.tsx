@@ -1,6 +1,6 @@
 import React from 'react';
 
-type AlgorithmType = 'BFS' | 'DFS' | 'Iterative Deepening' | 'Best-First Search';
+type AlgorithmType = 'BFS' | 'DFS' | 'UCS' | 'A*';
 
 interface AlgorithmInfoProps {
   selectedAlgorithm: AlgorithmType;
@@ -15,7 +15,7 @@ const algorithmInfo: Record<AlgorithmType, {
   complete: boolean;
 }> = {
   'BFS': {
-    description: 'Explores all nodes at the current depth before moving to the next depth level. Uses a queue (FIFO).',
+    description: 'Explores all nodes at the current depth before moving to the next depth level. Uses a queue (FIFO). Guarantees shortest path in unweighted graphs.',
     properties: ['Systematic level-by-level exploration', 'Guarantees shortest path in unweighted graphs', 'Uses queue data structure'],
     timeComplexity: 'O(V + E)',
     spaceComplexity: 'O(V)',
@@ -23,28 +23,28 @@ const algorithmInfo: Record<AlgorithmType, {
     complete: true
   },
   'DFS': {
-    description: 'Explores as far as possible along each branch before backtracking. Uses a stack (LIFO).',
+    description: 'Explores as far as possible along each branch before backtracking. Uses a stack (LIFO). Does not guarantee optimal path.',
     properties: ['Goes deep into one path before trying others', 'May not find shortest path', 'Uses stack data structure'],
     timeComplexity: 'O(V + E)',
     spaceComplexity: 'O(h)',
     optimal: false,
     complete: true
   },
-  'Iterative Deepening': {
-    description: 'Combines benefits of BFS and DFS by performing depth-limited DFS with increasing depth limits.',
-    properties: ['Memory efficient like DFS', 'Complete like BFS', 'Finds optimal solution'],
-    timeComplexity: 'O(b^d)',
-    spaceComplexity: 'O(d)',
+  'UCS': {
+    description: 'Uniform Cost Search (Dijkstra) explores nodes in order of their path cost from the start. Guarantees optimal solution in weighted graphs.',
+    properties: ['Explores by lowest path cost', 'Optimal for weighted graphs', 'Uses priority queue'],
+    timeComplexity: 'O((V + E) log V)',
+    spaceComplexity: 'O(V)',
     optimal: true,
     complete: true
   },
-  'Best-First Search': {
-    description: 'Uses a heuristic function to guide the search towards the most promising nodes first.',
-    properties: ['Uses heuristic to guide search', 'Can be faster than uninformed search', 'May not find optimal path'],
-    timeComplexity: 'O(b^m)',
-    spaceComplexity: 'O(b^m)',
-    optimal: false,
-    complete: false
+  'A*': {
+    description: 'Combines UCS with a heuristic function to guide search toward the goal. Optimal if heuristic is admissible and consistent.',
+    properties: ['Uses cost + heuristic', 'Guided search toward goal', 'Optimal with admissible heuristic'],
+    timeComplexity: 'O(b^d)',
+    spaceComplexity: 'O(b^d)',
+    optimal: true,
+    complete: true
   }
 };
 

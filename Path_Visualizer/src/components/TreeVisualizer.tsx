@@ -6,49 +6,67 @@ import Legend from './Legend';
 import AlgorithmInfo from './AlgorithmInfo';
 import Statistics from './Statistics';
 import type { TreeNode } from '../types/TreeNode';
-import { createSampleTree, createLargeTree, createRandomTree, getAllNodes, resetTree } from '../utils/TreeGenerator';
-import { treeBFS, treeDFS, iterativeDeepening, bestFirstSearch } from '../algorithms/treeAlgorithms';
+import { createRandomTree, getAllNodes, resetTree, addWeightsToTree, removeWeightsFromTree } from '../utils/TreeGenerator';
+import { treeBFS, treeDFS, uniformCostSearch, aStar } from '../algorithms/treeAlgorithms';
 
-type AlgorithmType = 'BFS' | 'DFS' | 'Iterative Deepening' | 'Best-First Search';
+type AlgorithmType = 'BFS' | 'DFS' | 'UCS' | 'A*';
 
 const TreeVisualizer: React.FC = () => {
   const [tree, setTree] = useState<TreeNode | null>(null);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<AlgorithmType>('BFS');
   const [isVisualizing, setIsVisualizing] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<TreeNode | null>(null);
+  const [isWeighted, setIsWeighted] = useState(false);
   const [searchResults, setSearchResults] = useState<{
     visitedCount: number;
     pathLength: number;
     found: boolean;
   }>({ visitedCount: 0, pathLength: 0, found: false });
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [maxNodes, setMaxNodes] = useState(10);
 
-  // Initialize with sample tree
+  // Initialize with random tree
   useEffect(() => {
-    const initialTree = createSampleTree();
+    const initialTree = createRandomTree(maxNodes);
     setTree(initialTree);
     // Find and set the initial goal node
     const goalNode = getAllNodes(initialTree).find(node => node.isGoal);
     if (goalNode) {
       setSelectedGoal(goalNode);
     }
-  }, []);
+  }, [maxNodes]);
 
-  // Generate a new tree
+  // Generate a new tree with smooth transition
   const generateNewTree = useCallback(() => {
-    if (isVisualizing) return;
+    if (isVisualizing || isTransitioning) return;
     
-    const rand = Math.random();
-    const newTree = rand > 0.6 ? createRandomTree(4, 3) : 
-                    rand > 0.3 ? createLargeTree() : 
-                    createSampleTree();
-    setTree(newTree);
+    setIsTransitioning(true);
     
-    // Set new goal
-    const goalNode = getAllNodes(newTree).find(node => node.isGoal);
-    if (goalNode) {
-      setSelectedGoal(goalNode);
-    }
-  }, [isVisualizing]);
+    // Clear search results immediately
+    setSearchResults({ visitedCount: 0, pathLength: 0, found: false });
+    
+    // Start fade-out transition
+    setTimeout(() => {
+      const newTree = createRandomTree(maxNodes);
+      
+      // Reset weighted state when generating new tree
+      setIsWeighted(false);
+      
+      // Set the new tree
+      setTree(newTree);
+      
+      // Set new goal
+      const goalNode = getAllNodes(newTree).find(node => node.isGoal);
+      if (goalNode) {
+        setSelectedGoal(goalNode);
+      }
+      
+      // End transition after tree is set
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 150);
+    }, 150);
+  }, [isVisualizing, isTransitioning]);
 
   // Clear all paths and visited states
   const clearPath = useCallback(() => {
@@ -63,6 +81,19 @@ const TreeVisualizer: React.FC = () => {
   const resetBoard = useCallback(() => {
     clearPath();
   }, [clearPath]);
+
+  // Handle weighted toggle
+  const handleWeightedToggle = useCallback((weighted: boolean) => {
+    if (isVisualizing || !tree) return;
+    
+    setIsWeighted(weighted);
+    if (weighted) {
+      addWeightsToTree(tree);
+    } else {
+      removeWeightsFromTree(tree);
+    }
+    setTree({ ...tree }); // Force re-render
+  }, [isVisualizing, tree]);
 
   // Handle node clicks for setting goal or toggling blocked state
   const handleNodeClick = useCallback((node: TreeNode) => {
@@ -87,12 +118,12 @@ const TreeVisualizer: React.FC = () => {
 
   // Animation functions
   const animateSearch = useCallback((visitedNodes: TreeNode[], pathNodes: TreeNode[]) => {
-    // First animate the search process
+    // First animate the search process (faster timing)
     visitedNodes.forEach((node, index) => {
       setTimeout(() => {
         node.isVisited = true;
         setTree(prevTree => ({ ...prevTree! }));
-      }, index * 200);
+      }, index * 1); // Reduced from 200ms to 100ms
     });
 
     // Then animate the path
@@ -101,14 +132,14 @@ const TreeVisualizer: React.FC = () => {
         setTimeout(() => {
           node.isPath = true;
           setTree(prevTree => ({ ...prevTree! }));
-        }, index * 100);
+        }, index * 1); // Reduced from 100ms to 50ms
       });
       
-      // Re-enable controls after animation
+      // Re-enable controls after animation (much shorter delay)
       setTimeout(() => {
         setIsVisualizing(false);
-      }, pathNodes.length * 100 + 500);
-    }, visitedNodes.length * 200);
+      }, pathNodes.length * 1 ); // Reduced from pathNodes.length * 100 + 500
+    }, visitedNodes.length * 1); // Reduced from 200ms to 100ms
   }, []);
 
   // Main visualization function
@@ -131,11 +162,11 @@ const TreeVisualizer: React.FC = () => {
         case 'DFS':
           result = treeDFS(startNode, selectedGoal);
           break;
-        case 'Iterative Deepening':
-          result = iterativeDeepening(startNode, selectedGoal);
+        case 'UCS':
+          result = uniformCostSearch(startNode, selectedGoal, isWeighted);
           break;
-        case 'Best-First Search':
-          result = bestFirstSearch(startNode, selectedGoal);
+        case 'A*':
+          result = aStar(startNode, selectedGoal, isWeighted);
           break;
         default:
           result = treeBFS(startNode, selectedGoal);
@@ -175,6 +206,7 @@ const TreeVisualizer: React.FC = () => {
             to={child}
             isPath={isPathEdge}
             isTraversed={isTraversedEdge}
+            showWeights={isWeighted}
           />
         );
       });
@@ -204,59 +236,77 @@ const TreeVisualizer: React.FC = () => {
 
   return (
     <div className="flex w-full h-full">
-      {/* Left Panel - Simulation */}
-      <div className="flex-1 flex flex-col p-4 min-h-0">
-        {/* Toolbar and Results Row */}
-        <div className="flex gap-4 mb-4">
-          <div className="flex-1">
-            <Toolbar
-              selectedAlgorithm={selectedAlgorithm}
-              onAlgorithmChange={setSelectedAlgorithm}
-              onVisualize={visualizeAlgorithm}
-              onClearBoard={resetBoard}
-              onClearPath={clearPath}
-              onGenerateTree={generateNewTree}
-              isVisualizing={isVisualizing}
-            />
+      {/* Left Panel - Tree Visualization (70%) */}
+      <div className="flex-grow" style={{ flexBasis: '70%' }}>
+        <div className="flex flex-col p-4 h-full">
+          <div className="text-sm text-gray-300 mb-4 text-center">
+            <p>Click on any node (except start) to set it as the goal.</p>
+            {selectedGoal && (
+              <p className="text-cyan-400">Current goal: Node {selectedGoal.value}</p>
+            )}
           </div>
           
-          {/* Results Display - Right of Toolbar */}
-          <div className="w-64">
-            <Statistics 
-              visitedNodesCount={searchResults.visitedCount}
-              pathLength={searchResults.pathLength}
-              totalNodes={getAllNodes(tree).length}
-              found={searchResults.found}
-            />
-          </div>
-        </div>
-        
-        <div className="text-sm text-gray-300 mb-4 text-center">
-          <p>Click on any node (except start) to set it as the goal.</p>
-          {selectedGoal && (
-            <p className="text-cyan-400">Current goal: Node {selectedGoal.value}</p>
-          )}
-        </div>
-        
-        {/* Tree Visualization Container */}
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          <div className="relative bg-gray-800 rounded-lg border-2 border-gray-600 overflow-hidden"
-               style={{ 
-                 width: 'min(70vw, 800px)', 
-                 height: 'min(70vh, 500px)',
-               }}>
-            {/* Render edges first (behind nodes) */}
-            {renderEdges()}
-            
-            {/* Render nodes */}
-            {renderNodes()}
+          {/* Tree Visualization Container */}
+          <div className="flex-1 flex items-center justify-center min-h-0">
+            <div 
+              className={`relative bg-gray-800 rounded-lg border-2 border-gray-600 overflow-hidden transition-opacity duration-300 ${
+                isTransitioning ? 'opacity-20' : 'opacity-100'
+              }`}
+              style={{ 
+                width: '100%', 
+                height: '100%',
+                maxWidth: '800px',
+                maxHeight: '600px'
+              }}
+            >
+              {/* Render edges first (behind nodes) */}
+              {renderEdges()}
+              
+              {/* Render nodes */}
+              {renderNodes()}
+              
+              {/* Transition overlay */}
+              {isTransitioning && (
+                <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
+                  <div className="text-white text-sm animate-pulse">
+                    Generating new tree...
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Middle Panel - Toolbar and Results (10%) */}
+      <div className="border-l border-gray-700 bg-gray-900 flex-shrink-0 min-w-0" style={{ flexBasis: '18%' }}>
+        <div className="flex flex-col p-4 h-full space-y-4 min-w-0">
+          <Toolbar
+            selectedAlgorithm={selectedAlgorithm}
+            onAlgorithmChange={setSelectedAlgorithm}
+            onVisualize={visualizeAlgorithm}
+            onClearBoard={resetBoard}
+            onClearPath={clearPath}
+            onGenerateTree={generateNewTree}
+            isVisualizing={isVisualizing}
+            isWeighted={isWeighted}
+            onWeightedToggle={handleWeightedToggle}
+            maxNodes={maxNodes}
+            onMaxNodesChange={setMaxNodes}
+          />
+          
+          <Statistics 
+            visitedNodesCount={searchResults.visitedCount}
+            pathLength={searchResults.pathLength}
+            totalNodes={getAllNodes(tree).length}
+            found={searchResults.found}
+          />
+        </div>
+      </div>
       
-      {/* Right Panel - Information */}
-      <div className="w-80 flex flex-col p-4 border-l border-gray-700 bg-gray-900 overflow-y-auto">
-        <div className="space-y-4">
+      {/* Right Panel - Information Sidebar (20%) */}
+      <div className="border-l border-gray-700 bg-gray-900 overflow-y-auto flex-shrink-0" style={{ flexBasis: '18%' }}>
+        <div className="flex flex-col p-4 space-y-4">
           <Legend />
           
           <AlgorithmInfo selectedAlgorithm={selectedAlgorithm} />

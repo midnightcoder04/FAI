@@ -2,6 +2,7 @@
 
 ## CONTENT
 
-### 1. PROJECT1
+### 1. Path_Visualizer
 
 Show BFS, DFS, UFS and A* algorithms use case
+

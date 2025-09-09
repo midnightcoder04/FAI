@@ -1,5 +1,23 @@
 import type { TreeNode, SearchResult } from '../types/TreeNode';
 
+// Priority Queue implementation for UCS and A*
+class PriorityQueue<T> {
+  private items: { item: T; priority: number }[] = [];
+
+  enqueue(item: T, priority: number) {
+    this.items.push({ item, priority });
+    this.items.sort((a, b) => a.priority - b.priority);
+  }
+
+  dequeue(): T | undefined {
+    return this.items.shift()?.item;
+  }
+
+  isEmpty(): boolean {
+    return this.items.length === 0;
+  }
+}
+
 // Breadth-First Search for trees
 export function treeBFS(root: TreeNode, goalNode: TreeNode): SearchResult {
   const visitedNodes: TreeNode[] = [];
@@ -198,6 +216,116 @@ export function bestFirstSearch(root: TreeNode, goalNode: TreeNode): SearchResul
     for (const child of current.children) {
       if (!visited.has(child.id) && !child.isBlocked) {
         priorityQueue.push(child);
+      }
+    }
+  }
+
+  return {
+    visitedNodes,
+    path: [],
+    edges: [],
+    found: false
+  };
+}
+
+// Uniform Cost Search (UCS/Dijkstra's Algorithm)
+export function uniformCostSearch(root: TreeNode, goalNode: TreeNode, useWeights: boolean = false): SearchResult {
+  const visitedNodes: TreeNode[] = [];
+  const visited = new Set<string>();
+  const pq = new PriorityQueue<{ node: TreeNode; cost: number; path: TreeNode[] }>();
+  let visitOrder = 0;
+
+  // Initialize with root
+  pq.enqueue({ node: root, cost: 0, path: [root] }, 0);
+
+  while (!pq.isEmpty()) {
+    const current = pq.dequeue()!;
+    const { node, cost, path } = current;
+
+    if (visited.has(node.id)) continue;
+
+    visited.add(node.id);
+    node.isVisited = true;
+    node.visitOrder = visitOrder++;
+    visitedNodes.push(node);
+
+    // Found the goal
+    if (node.id === goalNode.id) {
+      path.forEach(n => n.isPath = true);
+      return {
+        visitedNodes,
+        path,
+        edges: [],
+        found: true
+      };
+    }
+
+    // Add children to priority queue
+    for (const child of node.children) {
+      if (!visited.has(child.id) && !child.isBlocked) {
+        const edgeCost = useWeights ? (child.weight || 1) : 1;
+        const newCost = cost + edgeCost;
+        const newPath = [...path, child];
+        pq.enqueue({ node: child, cost: newCost, path: newPath }, newCost);
+      }
+    }
+  }
+
+  return {
+    visitedNodes,
+    path: [],
+    edges: [],
+    found: false
+  };
+}
+
+// A* Search Algorithm
+export function aStar(root: TreeNode, goalNode: TreeNode, useWeights: boolean = false): SearchResult {
+  const visitedNodes: TreeNode[] = [];
+  const visited = new Set<string>();
+  const pq = new PriorityQueue<{ node: TreeNode; gCost: number; path: TreeNode[] }>();
+  let visitOrder = 0;
+
+  // Heuristic function - Manhattan distance based on node positions
+  const heuristic = (node: TreeNode): number => {
+    const dx = Math.abs(node.x - goalNode.x);
+    const dy = Math.abs(node.y - goalNode.y);
+    return Math.sqrt(dx * dx + dy * dy) / 100; // Scale down for better performance
+  };
+
+  // Initialize with root
+  pq.enqueue({ node: root, gCost: 0, path: [root] }, heuristic(root));
+
+  while (!pq.isEmpty()) {
+    const current = pq.dequeue()!;
+    const { node, gCost, path } = current;
+
+    if (visited.has(node.id)) continue;
+
+    visited.add(node.id);
+    node.isVisited = true;
+    node.visitOrder = visitOrder++;
+    visitedNodes.push(node);
+
+    // Found the goal
+    if (node.id === goalNode.id) {
+      path.forEach(n => n.isPath = true);
+      return {
+        visitedNodes,
+        path,
+        edges: [],
+        found: true
+      };
+    }
+
+    // Add children to priority queue
+    for (const child of node.children) {
+      if (!visited.has(child.id) && !child.isBlocked) {
+        const edgeCost = useWeights ? (child.weight || 1) : 1;
+        const newGCost = gCost + edgeCost;
+        const fCost = newGCost + heuristic(child);
+        const newPath = [...path, child];
+        pq.enqueue({ node: child, gCost: newGCost, path: newPath }, fCost);
       }
     }
   }

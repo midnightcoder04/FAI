@@ -12,7 +12,7 @@ function App() {
         <TreeVisualizer />
       </main>
       <footer className="py-2 px-6 text-xs text-gray-500 border-t border-gray-700 text-center">
-        Built with React, TypeScript, and Tailwind CSS. Click nodes to set goals!
+        Built with VibeCoding by Yours Truly, ~abq
       </footer>
     </div>
   );

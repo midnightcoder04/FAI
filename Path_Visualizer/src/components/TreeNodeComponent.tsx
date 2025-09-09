@@ -14,7 +14,7 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
 }) => {
   // Determine node appearance based on its state
   const getNodeClass = () => {
-    const baseClass = "absolute w-12 h-12 rounded-full border-2 flex items-center justify-center text-sm font-bold cursor-pointer transition-all duration-300 transform hover:scale-110";
+    const baseClass = "absolute w-12 h-12 rounded-full border-2 flex items-center justify-center text-sm font-bold cursor-pointer transition-all duration-300 transform hover:scale-110 animate-node-entrance";
     
     if (node.isStart) {
       return `${baseClass} bg-green-500 border-green-600 text-white shadow-lg animate-start-glow`;

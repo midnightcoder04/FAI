@@ -15,7 +15,7 @@ const Statistics: React.FC<StatisticsProps> = ({
 }) => {
   if (visitedNodesCount === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-3 border border-gray-600 h-full flex items-center justify-center">
+      <div className="bg-gray-800 rounded-lg p-3 border border-gray-600 min-w-0 w-full flex items-center justify-center min-h-[120px]">
         <div className="text-xs text-gray-500 text-center">
           Run a search to see results
         </div>
@@ -26,10 +26,10 @@ const Statistics: React.FC<StatisticsProps> = ({
   const explorationPercentage = ((visitedNodesCount / totalNodes) * 100).toFixed(1);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-3 border border-gray-600">
+    <div className="bg-gray-800 rounded-lg p-3 border border-gray-600 min-w-0 w-full">
       <h3 className="text-sm font-semibold mb-2 text-center text-cyan-400">Results</h3>
       
-      <div className="flex justify-between items-center text-xs gap-3">
+      <div className="flex justify-between items-center text-xs gap-2 min-w-0">
         <div className="flex items-center gap-1">
           <div className={`text-base font-bold ${found ? 'text-green-400' : 'text-red-400'}`}>
             {found ? '✓' : '✗'}
