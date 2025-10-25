@@ -6,29 +6,121 @@ import { Sprout } from "lucide-react";
 import farmHero from "@/assets/farm-hero.jpg";
 import { toast } from "sonner";
 
+interface PredictionResult {
+  prediction: number;
+  units: string;
+  details: any;
+}
+
+interface TrendDataPoint {
+  crop: string;
+  yield: number;
+}
+
 const Index = () => {
   const [predictedYield, setPredictedYield] = useState<number | null>(null);
+  const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePredict = (data: FormData) => {
-    // Mock prediction logic - in real app, this would call an ML API
-    const baseYield = 5.0;
-    const rainfallFactor = parseFloat(data.rainfall) / 1000;
-    const tempFactor = parseFloat(data.temperature) / 25;
-    const pesticideFactor = parseFloat(data.pesticides) / 20;
+  // Random crop selection for comparison
+  const allCrops = [
+    "Maize", "Plantains and others", "Potatoes", "Rice, paddy", 
+    "Sorghum", "Soybeans", "Sweet potatoes", "Wheat", "Yams"
+  ];
 
-    const prediction =
-      baseYield * (0.6 + rainfallFactor * 0.2 + tempFactor * 0.15 + pesticideFactor * 0.05);
-
-    setPredictedYield(prediction);
+  const handlePredict = async (data: FormData) => {
+    setIsLoading(true);
     
-    toast.success("Yield prediction calculated successfully!", {
-      description: `Predicted yield: ${prediction.toFixed(2)} tonnes/ha`,
-    });
+    try {
+      const currentYear = parseInt(data.year);
+      const predictions: TrendDataPoint[] = [];
+      
+      console.log('Starting predictions for year:', currentYear);
+      console.log('Form data:', data);
+      
+      // Get the selected crop
+      const selectedCrop = data.crop;
+      
+      // Select 3 other random crops (excluding the selected one)
+      const otherCrops = allCrops
+        .filter(crop => crop !== selectedCrop)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+      
+      // Combine selected crop with 3 random others
+      const cropsToPredict = [selectedCrop, ...otherCrops];
+      
+      console.log('Predicting for crops:', cropsToPredict);
+      
+      // Make predictions for all 4 crops
+      for (const crop of cropsToPredict) {
+        const requestBody = {
+          year: currentYear,
+          average_rain_fall_mm_per_year: parseFloat(data.rainfall),
+          pesticides_tonnes: parseFloat(data.pesticides),
+          avg_temp: parseFloat(data.temperature),
+          area: data.country,
+          item: crop,
+        };
+        
+        console.log(`Fetching prediction for crop ${crop}:`, requestBody);
+        
+        const response = await fetch('http://localhost:5001/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
 
-    // Smooth scroll to results
-    setTimeout(() => {
-      document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+        console.log(`Response status for crop ${crop}:`, response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Error response for crop ${crop}:`, errorText);
+          throw new Error(`Failed to get prediction for crop ${crop}: ${response.status}`);
+        }
+
+        const result: PredictionResult = await response.json();
+        console.log(`Prediction result for crop ${crop}:`, result);
+        console.log(`Extracted prediction value:`, result.prediction);
+        console.log(`Type of prediction:`, typeof result.prediction);
+        
+        predictions.push({
+          crop: crop,
+          yield: result.prediction,
+        });
+      }
+
+      console.log('All predictions:', predictions);
+      console.log('First prediction object:', predictions[0]);
+      console.log('First prediction yield:', predictions[0].yield);
+
+      // Set the selected crop prediction (first in the array)
+      const selectedCropPrediction = predictions[0].yield;
+      console.log('Selected crop prediction (final):', selectedCropPrediction);
+      console.log('Type of selectedCropPrediction:', typeof selectedCropPrediction);
+      
+      setPredictedYield(selectedCropPrediction);
+      setTrendData(predictions);
+      
+      toast.success("Yield prediction calculated successfully!", {
+        description: `Predicted yield for ${selectedCrop}: ${selectedCropPrediction.toFixed(2)} tonnes/ha`,
+      });
+
+      // Smooth scroll to results
+      setTimeout(() => {
+        document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+      
+    } catch (error) {
+      console.error('Prediction error:', error);
+      toast.error("Failed to get prediction", {
+        description: error instanceof Error ? error.message : "Please check if the backend server is running on port 5001",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -68,13 +160,13 @@ const Index = () => {
 
         {/* Prediction Form */}
         <section>
-          <PredictionForm onPredict={handlePredict} />
+          <PredictionForm onPredict={handlePredict} isLoading={isLoading} />
         </section>
 
         {/* Results Display */}
         {predictedYield !== null && (
           <section id="results" className="pt-12">
-            <ResultsDisplay predictedYield={predictedYield} />
+            <ResultsDisplay predictedYield={predictedYield} trendData={trendData} />
           </section>
         )}
 

@@ -1,7 +1,7 @@
 import { TrendingUp, BarChart3 } from "lucide-react";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -9,20 +9,17 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-interface ResultsDisplayProps {
-  predictedYield: number;
+interface TrendDataPoint {
+  crop: string;
+  yield: number;
 }
 
-const ResultsDisplay = ({ predictedYield }: ResultsDisplayProps) => {
-  // Mock historical data for trend visualization
-  const trendData = [
-    { year: "2020", yield: predictedYield * 0.85 },
-    { year: "2021", yield: predictedYield * 0.92 },
-    { year: "2022", yield: predictedYield * 0.88 },
-    { year: "2023", yield: predictedYield * 0.95 },
-    { year: "2024", yield: predictedYield },
-  ];
+interface ResultsDisplayProps {
+  predictedYield: number;
+  trendData: TrendDataPoint[];
+}
 
+const ResultsDisplay = ({ predictedYield, trendData }: ResultsDisplayProps) => {
   return (
     <div className="glass-strong rounded-3xl p-8 max-w-3xl mx-auto space-y-8 animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
@@ -43,20 +40,29 @@ const ResultsDisplay = ({ predictedYield }: ResultsDisplayProps) => {
       <div className="glass rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-2">
           <BarChart3 className="text-secondary" size={24} />
-          <h3 className="text-lg font-semibold text-foreground">Yield Trend Analysis</h3>
+          <h3 className="text-lg font-semibold text-foreground">Crop Yield Comparison</h3>
         </div>
 
-        <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={trendData}>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={trendData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis 
-              dataKey="year" 
+              dataKey="crop" 
               stroke="hsl(var(--muted-foreground))"
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '11px' }}
+              angle={-15}
+              textAnchor="end"
+              height={80}
             />
             <YAxis 
               stroke="hsl(var(--muted-foreground))"
               style={{ fontSize: '12px' }}
+              label={{ 
+                value: 'Yield (tonnes/ha)', 
+                angle: -90, 
+                position: 'insideLeft',
+                style: { fontSize: '12px', fill: 'hsl(var(--muted-foreground))' }
+              }}
             />
             <Tooltip
               contentStyle={{
@@ -66,21 +72,19 @@ const ResultsDisplay = ({ predictedYield }: ResultsDisplayProps) => {
                 backdropFilter: "blur(20px)",
               }}
               labelStyle={{ color: "hsl(var(--foreground))" }}
+              formatter={(value: number) => [`${value.toFixed(2)} tonnes/ha`, 'Yield']}
             />
-            <Line
-              type="monotone"
+            <Bar
               dataKey="yield"
-              stroke="hsl(var(--accent))"
-              strokeWidth={3}
-              dot={{ fill: "hsl(var(--accent))", r: 5 }}
-              activeDot={{ r: 7 }}
+              fill="hsl(var(--accent))"
+              radius={[8, 8, 0, 0]}
             />
-          </LineChart>
+          </BarChart>
         </ResponsiveContainer>
 
         <div className="pt-4 border-t border-border/30">
           <p className="text-sm text-muted-foreground text-center">
-            Historical trend showing steady growth in yield potential
+            Comparing selected crop yield with 3 other randomly chosen crop types for the same conditions
           </p>
         </div>
       </div>

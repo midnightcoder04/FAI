@@ -12,15 +12,18 @@
     --color-popover: oklch(100% 0 0);
     --color-popover-foreground: oklch(30% 0.05 150);
 
+    /* Deep forest green primary */
     --color-primary: oklch(40% 0.1 150);
     --color-primary-foreground: oklch(95% 0.05 42);
 
+    /* Wheat gold secondary */
     --color-secondary: oklch(70% 0.12 42);
     --color-secondary-foreground: oklch(30% 0.05 150);
 
     --color-muted: oklch(90% 0.01 42);
     --color-muted-foreground: oklch(55% 0.03 150);
 
+    /* Neon green accent */
     --color-accent: oklch(70% 0.18 120);
     --color-accent-foreground: oklch(30% 0.05 150);
 
@@ -95,4 +98,3 @@
     opacity: 0;
   }
 }
-

@@ -35,6 +35,7 @@ const crops = [
 
 interface PredictionFormProps {
   onPredict: (data: FormData) => void;
+  isLoading?: boolean;
 }
 
 export interface FormData {
@@ -46,7 +47,7 @@ export interface FormData {
   crop: string;
 }
 
-const PredictionForm = ({ onPredict }: PredictionFormProps) => {
+const PredictionForm = ({ onPredict, isLoading = false }: PredictionFormProps) => {
   const [formData, setFormData] = useState<FormData>({
     year: "",
     rainfall: "",
@@ -189,9 +190,10 @@ const PredictionForm = ({ onPredict }: PredictionFormProps) => {
 
       <Button
         type="submit"
-        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-6 rounded-2xl font-semibold glow-accent transition-all duration-300 hover:scale-[1.02]"
+        disabled={isLoading}
+        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-6 rounded-2xl font-semibold glow-accent transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Predict Yield
+        {isLoading ? "Predicting..." : "Predict Yield"}
       </Button>
     </form>
   );

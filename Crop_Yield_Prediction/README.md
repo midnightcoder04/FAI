@@ -1,73 +1,101 @@
-# Welcome to your Lovable project
+# Crop Yield Predictor
 
-## Project info
+This repository contains the Crop Yield Predictor web application — an agricultural analytics UI for estimating crop yields based on climate, soil, and management data.
 
-**URL**: https://lovable.dev/projects/7678a066-dcf7-4e8a-b227-5ce47a5b25cc
+## Quick start (local)
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/7678a066-dcf7-4e8a-b227-5ce47a5b25cc) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Make sure you have Node.js (recommended via nvm) and npm installed.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repo
 git clone <YOUR_GIT_URL>
+cd Crop_Yield_Prediction
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start dev server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open http://localhost:8080 in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
+## Technologies
 
 - Vite
-- TypeScript
-- React
-- shadcn-ui
+- React + TypeScript
 - Tailwind CSS
 
-## How can I deploy this project?
+## Backend (Flask) — ML model server for crop yield predictions
 
-Simply open [Lovable](https://lovable.dev/projects/7678a066-dcf7-4e8a-b227-5ce47a5b25cc) and click on Share -> Publish.
+The backend under `backend/` loads your trained decision tree model (and scaler) and exposes a `/predict` endpoint. It uses the preprocessing logic you provided (one-hot encoding for Area/Item, scaling, etc.).
 
-## Can I connect a custom domain to my Lovable project?
+Files:
+- `backend/app.py` — Flask server with `/health` and `/predict` (POST) endpoints.
+- `backend/model.py` — loads `scaler.pkl` and `decision_tree_model.pkl`; handles preprocessing with hardcoded training columns.
+- `backend/requirements.txt` — Python dependencies (Flask, pandas, joblib, scikit-learn).
 
-Yes, you can!
+### Setup (one-time)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. **Add model artifacts** to `backend/models/`:
+   - `scaler.pkl` (StandardScaler )
+   - `decision_tree_model.pkl` (your trained model; or use `linear_regression_model.pkl` if you prefer)
+   - Training columns are in `model.py` 
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+2. **Create virtual environment and install dependencies**:
+   ```zsh
+   # from Crop_Yield_Prediction directory
+   python3 -m venv CYP_venv
+   source CYP_venv/bin/activate
+   pip install -r backend/requirements.txt
+   ```
+
+3. **Run the server**:
+   ```zsh
+   python -m backend.app
+   ```
+
+### API contract
+
+**POST /predict** — predict crop yield
+
+Request body (JSON):
+```json
+{
+  "year": 2024,
+  "average_rain_fall_mm_per_year": 1100.0,
+  "pesticides_tonnes": 6000.0,
+  "avg_temp": 21.0,
+  "area": "United States of America",
+  "item": "Maize"
+}
+```
+
+Response (JSON):
+```json
+{
+  "prediction": 45.67,
+  "units": "tonnes/ha",
+  "details": { ... }
+}
+```
+
+Example curl:
+```zsh
+curl -sS -X POST http://localhost:5001/predict \
+  -H 'Content-Type: application/json' \
+  -d '{"year":2024,"average_rain_fall_mm_per_year":1100,"pesticides_tonnes":6000,"avg_temp":21,"area":"United States of America","item":"Maize"}' | jq
+```
+
+Frontend integration (fetch):
+```js
+async function predictYield(input) {
+  const res = await fetch('http://localhost:5001/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  return res.json();
+}
+```
