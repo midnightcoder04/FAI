@@ -53,7 +53,7 @@ Files:
 
 3. **Run the server**:
    ```zsh
-   python -m backend.app
+   python3 -m backend.app
    ```
 
 ### API contract

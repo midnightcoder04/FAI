@@ -45,8 +45,8 @@ loaded_model = None
 try:
     loaded_scaler = joblib.load(SCALER_PATH)
     loaded_model = joblib.load(MODEL_PATH)
-    print(f"✓ Loaded model and scaler from {MODELS_DIR}")
-    print(f"✓ Using {len(TRAINING_COLUMNS)} hardcoded training columns")
+    print(f"./ Loaded model and scaler from {MODELS_DIR}")
+    print(f"./  Using {len(TRAINING_COLUMNS)} hardcoded training columns")
 except FileNotFoundError as e:
     print(f"Warning: could not load model artifacts: {e}")
     print(f"Make sure scaler.pkl and decision_tree_model.pkl are in {MODELS_DIR}")
